@@ -38,14 +38,14 @@ func NewGraph(adj [][]int) *Graph {
 	return g
 }
 
-func NewRandomGraph(v, e int) *Graph {
+func NewRandomGraph(n, e int) *Graph {
 	g := &Graph{}
-	for i := 0; i < v; i++ {
+	for i := 0; i < n; i++ {
 		g.AddNode(i)
 	}
 	for i := 0; i < e; i++ {
-		u := rand.Intn(v)
-		v := rand.Intn(v)
+		u := rand.Intn(n)
+		v := rand.Intn(n)
 		for u == v {
 			v = rand.Intn(v)
 		}
@@ -60,24 +60,29 @@ func (g *Graph) Print() {
 		for _, n := range node.Adjacent {
 			print(n.Key, " ")
 		}
-		println()
+		print("\n")
 	}
 }
 
 func (g *Graph) Bfs(s int) {
-	queue := []int{s}
-	visited := make([]bool, len(g.Vertices))
-	visited[s] = true
-
-	for len(queue) > 0 {
-		u := queue[0]
-		queue = queue[1:]
-		print(u, ", ")
-		for _, v := range g.Vertices[u].Adjacent {
-			if !visited[v.Key] {
-				visited[v.Key] = true
-				queue = append(queue, v.Key)
+	d := make([]int, len(g.Vertices))
+	for i := range d {
+		d[i] = -1
+	}
+	d[s] = 0
+	level := 1
+	frontier := []*Node{g.Vertices[s]}
+	for len(frontier) > 0 {
+		var next []*Node
+		for _, u := range frontier {
+			for _, v := range u.Adjacent {
+				if d[v.Key] == -1 {
+					d[v.Key] = level
+					next = append(next, v)
+				}
 			}
 		}
+		frontier = next
+		level++
 	}
 }

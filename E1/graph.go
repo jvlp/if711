@@ -2,6 +2,7 @@ package main
 
 import (
 	"math/rand"
+	"sync"
 )
 
 type Node struct {
@@ -71,6 +72,7 @@ func (g *Graph) Bfs(s int) {
 	}
 	d[s] = 0
 	level := 1
+
 	frontier := []*Node{g.Vertices[s]}
 	for len(frontier) > 0 {
 		var next []*Node
@@ -83,6 +85,41 @@ func (g *Graph) Bfs(s int) {
 			}
 		}
 		frontier = next
+		level++
+	}
+}
+
+func (g *Graph) ParallelBfs(s int) {
+	d := make([]int, len(g.Vertices))
+	for i := range d {
+		d[i] = -1
+	}
+	d[s] = 0
+	level := 1
+
+	var mutex sync.Mutex
+	frontier := []*Node{g.Vertices[s]}
+	for len(frontier) > 0 {
+		nextFrontier := make(chan []*Node, len(g.Vertices))
+		for _, u := range frontier {
+			go func(u *Node) {
+				var next []*Node
+				for _, v := range u.Adjacent {
+					mutex.Lock()
+					if d[v.Key] == -1 {
+						d[v.Key] = level
+						next = append(next, v)
+					}
+					mutex.Unlock()
+				}
+				nextFrontier <- next
+			}(u)
+		}
+		close(nextFrontier)
+		frontier = []*Node{}
+		for nf := range nextFrontier {
+			frontier = append(frontier, nf...)
+		}
 		level++
 	}
 }
